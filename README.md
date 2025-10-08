@@ -326,9 +326,34 @@ lsof -ti:5173 | xargs kill -9
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## 🚀 Deployment
+
+This application is production-ready and can be deployed to various platforms.
+
+### Recommended Deployment Stack
+
+- **Frontend**: Vercel or Netlify (React + Vite)
+- **Backend**: Render or Railway (Node.js + Express)
+- **Database**: MongoDB Atlas (Free tier available)
+
+### Quick Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for comprehensive deployment guide including:
+- MongoDB Atlas setup
+- Backend deployment to Render
+- Frontend deployment to Vercel
+- Environment configuration
+- Security best practices
+- Troubleshooting tips
+
+### Deployment Checklist
+
+Use [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) to ensure all steps are completed.
+
 ## Support
 
 For support and questions:
 - Create an issue on GitHub
 - Check the troubleshooting section above
 - Review the API documentation at `/api` endpoints
+- See [DEPLOYMENT.md](DEPLOYMENT.md) for deployment help
