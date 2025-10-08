@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import axios from 'axios'
+import api from '../utils/api'
 
 interface User {
   id: string
@@ -48,7 +48,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const storedToken = localStorage.getItem('token')
       if (storedToken) {
         try {
-          const response = await axios.get('/api/auth/me', {
+          const response = await api.get('/auth/me', {
             headers: { Authorization: `Bearer ${storedToken}` }
           })
           setUser(response.data.data)
@@ -67,7 +67,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await axios.post('/api/auth/login', { email, password })
+      const response = await api.post('/auth/login', { email, password })
       const { user: userData, token: userToken } = response.data.data
 
       setUser(userData)
@@ -85,7 +85,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (username: string, email: string, password: string) => {
     try {
-      const response = await axios.post('/api/auth/register', {
+      const response = await api.post('/auth/register', {
         username,
         email,
         password
