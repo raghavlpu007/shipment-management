@@ -93,15 +93,17 @@ app.use('/api/pincode', pincodeRoutes);
 app.use('/api/template', templateRoutes);
 
 // Serve frontend in production
-if (process.env.NODE_ENV === 'production') {
-  // Serve static files from the React app build directory
-  app.use(express.static(path.join(__dirname, '../../client/dist')));
-
-  // Handle React routing, return all requests to React app
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
-  });
-}
+// Note: Frontend is deployed separately on Vercel
+// This code is commented out for API-only deployment on Render
+// if (process.env.NODE_ENV === 'production') {
+//   // Serve static files from the React app build directory
+//   app.use(express.static(path.join(__dirname, '../../client/dist')));
+//
+//   // Handle React routing, return all requests to React app
+//   app.get('*', (req, res) => {
+//     res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
+//   });
+// }
 
 // 404 handler
 app.use(notFound);
