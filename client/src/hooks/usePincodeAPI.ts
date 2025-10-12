@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { PincodeData } from '../types'
+import api from '../utils/api'
 
 interface UsePincodeAPIReturn {
   loading: boolean
@@ -43,49 +44,42 @@ export const usePincodeAPI = (): UsePincodeAPIReturn => {
     setLoading(true)
 
     try {
-      // Call backend API proxy instead of directly calling government API
-      const response = await fetch(`/api/pincode/${pincode}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-      })
+      // Call backend API proxy using configured api instance
+      const response = await api.get(`/pincode/${pincode}`)
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
-      }
-
-      const result = await response.json()
-
-      if (!result.success || !result.data) {
+      if (!response.data.success || !response.data.data) {
         setError('No data found for this pincode. Please check and try again.')
         return null
       }
 
-      const transformedData: PincodeData = result.data
+      const transformedData: PincodeData = response.data.data
 
       // Cache the result
       pincodeCache.set(pincode, transformedData)
       setPincodeData(transformedData)
-      
+
       return transformedData
-    } catch (err) {
+    } catch (err: any) {
       console.error('Pincode API Error:', err)
-      
-      if (err instanceof Error) {
-        if (err.message.includes('Failed to fetch')) {
-          setError('Network error. Please check your internet connection and try again.')
-        } else if (err.message.includes('429')) {
+
+      if (err.response) {
+        // Server responded with error
+        const message = err.response.data?.error || err.response.data?.message
+        if (err.response.status === 404) {
+          setError('No data found for this pincode. Please check and try again.')
+        } else if (err.response.status === 429) {
           setError('Too many requests. Please wait a moment and try again.')
         } else {
-          setError('Failed to fetch pincode data. Please try again.')
+          setError(message || 'Failed to fetch pincode data. Please try again.')
         }
+      } else if (err.request) {
+        // Request made but no response
+        setError('Network error. Please check your internet connection and try again.')
       } else {
+        // Something else happened
         setError('An unexpected error occurred. Please try again.')
       }
-      
+
       return null
     } finally {
       setLoading(false)

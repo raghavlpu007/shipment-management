@@ -22,7 +22,9 @@
     "pkg": "pkg . --out-path ../dist/server/ --targets node18-win-x64",
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
-    "test": "jest"
+    "test": "jest",
+    "seed:users": "ts-node src/scripts/seedUsers.ts",
+    "create:user": "ts-node src/scripts/createUser.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

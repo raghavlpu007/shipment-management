@@ -36,10 +36,20 @@ router.get('/:pincode', asyncHandler(async (req: Request, res: Response) => {
     });
 
     if (!response.ok) {
+      console.error(`Pincode API error: ${response.status} ${response.statusText}`);
       throw new ApiError(response.status, `Failed to fetch pincode data: ${response.statusText}`);
     }
 
-    const data: any = await response.json();
+    // Get response text first to handle non-JSON responses
+    const responseText = await response.text();
+
+    let data: any;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Failed to parse pincode API response:', responseText.substring(0, 200));
+      throw new ApiError(500, 'Invalid response from pincode API');
+    }
 
     if (!data.records || data.records.length === 0) {
       throw new ApiError(404, 'No data found for this pincode');
@@ -60,6 +70,7 @@ router.get('/:pincode', asyncHandler(async (req: Request, res: Response) => {
       data: transformedData
     });
   } catch (error: any) {
+    console.error('Pincode route error:', error);
     if (error instanceof ApiError) {
       throw error;
     }
