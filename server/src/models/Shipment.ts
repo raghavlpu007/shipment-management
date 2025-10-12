@@ -71,15 +71,18 @@ const ShipmentSchema = new Schema<IShipment>({
   },
   pickupCustomerName: {
     type: String,
-    required: [true, 'Pickup customer name is required'],
+    required: false,
     trim: true,
     maxlength: [100, 'Pickup customer name cannot exceed 100 characters']
   },
   pickupCustomerMoNo: {
     type: String,
-    required: [true, 'Pickup customer mobile number is required'],
+    required: false,
     validate: {
-      validator: validatePhone,
+      validator: function(v: string) {
+        if (!v) return true; // Allow empty
+        return validatePhone(v);
+      },
       message: 'Please provide a valid phone number'
     }
   },
@@ -140,12 +143,14 @@ const ShipmentSchema = new Schema<IShipment>({
   },
   baseAmount: {
     type: Number,
-    required: [true, 'Base amount is required'],
+    required: false,
+    default: 0,
     min: [0, 'Base amount must be greater than or equal to 0']
   },
   royaltyMargin: {
     type: Number,
-    required: [true, 'Royalty margin is required'],
+    required: false,
+    default: 0,
     min: [0, 'Royalty margin must be greater than or equal to 0']
   },
   totalBeforeGst: {
@@ -154,7 +159,8 @@ const ShipmentSchema = new Schema<IShipment>({
   },
   gst: {
     type: Number,
-    required: [true, 'GST is required'],
+    required: false,
+    default: 0,
     min: [0, 'GST must be greater than or equal to 0']
   },
   totalAfterGst: {
@@ -171,20 +177,24 @@ const ShipmentSchema = new Schema<IShipment>({
   },
   saleCost: {
     type: Number,
-    required: [true, 'Sale cost is required'],
+    required: false,
+    default: 0,
     min: [0, 'Sale cost must be greater than or equal to 0']
   },
   customerName: {
     type: String,
-    required: [true, 'Customer name is required'],
+    required: false,
     trim: true,
     maxlength: [100, 'Customer name cannot exceed 100 characters']
   },
   customerMoNo: {
     type: String,
-    required: [true, 'Customer mobile number is required'],
+    required: false,
     validate: {
-      validator: validatePhone,
+      validator: function(v: string) {
+        if (!v) return true; // Allow empty
+        return validatePhone(v);
+      },
       message: 'Please provide a valid customer phone number'
     }
   },
@@ -226,15 +236,20 @@ const ShipmentSchema = new Schema<IShipment>({
 
 // Pre-save middleware to calculate derived fields
 ShipmentSchema.pre('save', function(next) {
+  // Use default values if fields are missing
+  const baseAmount = this.baseAmount || 0;
+  const royaltyMargin = this.royaltyMargin || 0;
+  const gst = this.gst || 0;
+
   // Calculate totalBeforeGst
-  this.totalBeforeGst = this.baseAmount + this.royaltyMargin;
-  
+  this.totalBeforeGst = baseAmount + royaltyMargin;
+
   // Calculate totalAfterGst
-  this.totalAfterGst = this.totalBeforeGst + this.gst;
-  
+  this.totalAfterGst = this.totalBeforeGst + gst;
+
   // Calculate grandTotal
   this.grandTotal = this.totalAfterGst;
-  
+
   next();
 });
 
