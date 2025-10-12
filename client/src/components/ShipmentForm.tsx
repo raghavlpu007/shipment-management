@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
-import { 
-  Upload, 
-  User, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Calendar, 
-  Package, 
-  Truck, 
+import {
+  Package,
+  User,
+  Phone,
+  Mail,
+  MapPin,
+  Calendar,
+  Truck,
   CreditCard,
   Hash,
   DollarSign,
@@ -24,7 +23,6 @@ import {
 import Button from './Button'
 import Input from './Input'
 import Select from './Select'
-import FileUpload from './FileUpload'
 import PincodeInput from './PincodeInput'
 import { useCreateShipment, useUpdateShipment } from '../hooks/useShipments'
 import { useVisibleFields } from '../hooks/useFieldsConfig'
@@ -117,20 +115,6 @@ const ShipmentForm: React.FC<ShipmentFormProps> = ({
   // Pincode handling state
   const [pincodeValue, setPincodeValue] = useState('')
 
-  // File upload state
-  const [uploadedFiles, setUploadedFiles] = useState({
-    awbImageUrl: '',
-    weightImageUrl: '',
-    stickerUrl: ''
-  })
-
-  // Selected files state (before upload)
-  const [selectedFiles, setSelectedFiles] = useState({
-    awbImage: null as File | null,
-    weightImage: null as File | null,
-    sticker: null as File | null
-  })
-
   // Hooks
   const { data: fieldsConfigData } = useVisibleFields()
   const createMutation = useCreateShipment()
@@ -188,50 +172,6 @@ const ShipmentForm: React.FC<ShipmentFormProps> = ({
     }
   }, [shipment])
 
-  // Initialize uploaded files from shipment data
-  useEffect(() => {
-    if (shipment) {
-      setUploadedFiles({
-        awbImageUrl: shipment.awbImageUrl || '',
-        weightImageUrl: shipment.weightImageUrl || '',
-        stickerUrl: shipment.stickerUrl || ''
-      })
-    }
-  }, [shipment])
-
-  // File upload handler
-  const handleFileUpload = async (file: File, fieldName: keyof typeof uploadedFiles): Promise<string | null> => {
-    if (!file) return null
-
-    const formData = new FormData()
-    formData.append('file', file)
-
-    try {
-      const response = await fetch('/api/upload/single', {
-        method: 'POST',
-        body: formData
-      })
-
-      if (!response.ok) {
-        throw new Error('Upload failed')
-      }
-
-      const result = await response.json()
-      const fileUrl = result.data.url
-
-      // Update the uploaded files state
-      setUploadedFiles(prev => ({
-        ...prev,
-        [fieldName]: fileUrl
-      }))
-
-      return fileUrl
-    } catch (error) {
-      console.error('File upload error:', error)
-      alert('Failed to upload file. Please try again.')
-      return null
-    }
-  }
 
   // Watch for amount changes to calculate totals
   const baseAmount = watch('baseAmount') || 0
@@ -253,54 +193,19 @@ const ShipmentForm: React.FC<ShipmentFormProps> = ({
   // Submit handler
   const onSubmit = async (data: CreateShipmentData) => {
     try {
-      // Upload any selected files before submitting
-      const finalUploadedFiles = { ...uploadedFiles }
-
-      // Upload files with error handling
-      try {
-        if (selectedFiles.awbImage) {
-          const url = await handleFileUpload(selectedFiles.awbImage, 'awbImageUrl')
-          if (url) finalUploadedFiles.awbImageUrl = url
-        }
-
-        if (selectedFiles.weightImage) {
-          const url = await handleFileUpload(selectedFiles.weightImage, 'weightImageUrl')
-          if (url) finalUploadedFiles.weightImageUrl = url
-        }
-
-        if (selectedFiles.sticker) {
-          const url = await handleFileUpload(selectedFiles.sticker, 'stickerUrl')
-          if (url) finalUploadedFiles.stickerUrl = url
-        }
-      } catch (uploadError) {
-        console.error('File upload failed:', uploadError)
-        alert('Failed to upload files. Please try again.')
-        return
-      }
-
-      // Include uploaded file URLs in the submission data (only if they exist)
-      const submissionData = {
-        ...data,
-        ...(finalUploadedFiles.awbImageUrl && { awbImageUrl: finalUploadedFiles.awbImageUrl }),
-        ...(finalUploadedFiles.weightImageUrl && { weightImageUrl: finalUploadedFiles.weightImageUrl }),
-        ...(finalUploadedFiles.stickerUrl && { stickerUrl: finalUploadedFiles.stickerUrl })
-      }
-
-      console.log('Final submission data:', submissionData)
-
-
+      console.log('Submission data:', data)
 
       if (isEditing) {
         await updateMutation.mutateAsync({
           id: shipment._id,
           data: {
-            ...submissionData,
+            ...data,
             updatedBy: 'user'
           }
         })
       } else {
         await createMutation.mutateAsync({
-          ...submissionData,
+          ...data,
           createdBy: 'user',
           updatedBy: 'user'
         })
@@ -772,45 +677,6 @@ const ShipmentForm: React.FC<ShipmentFormProps> = ({
         </div>
       ))}
 
-      {/* File Upload Section */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
-        <h4 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-          <Upload className="h-5 w-5 mr-2 text-blue-600" />
-          Reference Images & Documents
-        </h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <FileUpload
-            label="AWB Image"
-            accept="image/*"
-            maxSize={5}
-            onFileSelect={(file) => {
-              setSelectedFiles(prev => ({ ...prev, awbImage: file }))
-            }}
-            currentFile={uploadedFiles.awbImageUrl || shipment?.awbImageUrl}
-          />
-
-          <FileUpload
-            label="Weight Image"
-            accept="image/*"
-            maxSize={5}
-            onFileSelect={(file) => {
-              setSelectedFiles(prev => ({ ...prev, weightImage: file }))
-            }}
-            currentFile={uploadedFiles.weightImageUrl || shipment?.weightImageUrl}
-          />
-
-          <FileUpload
-            label="Sticker/Label"
-            accept="image/*,.pdf"
-            maxSize={5}
-            onFileSelect={(file) => {
-              setSelectedFiles(prev => ({ ...prev, sticker: file }))
-            }}
-            currentFile={uploadedFiles.stickerUrl || shipment?.stickerUrl}
-          />
-        </div>
-      </div>
-
       {/* Calculated totals display */}
       <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200 shadow-sm">
         <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -854,7 +720,7 @@ const ShipmentForm: React.FC<ShipmentFormProps> = ({
           type="submit"
           loading={isLoading}
           className="min-w-[160px] bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all"
-          leftIcon={isEditing ? <Package className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
+          leftIcon={<Package className="h-4 w-4" />}
         >
           {isEditing ? 'Update Shipment' : 'Create Shipment'}
         </Button>
